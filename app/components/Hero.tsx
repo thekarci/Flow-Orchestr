@@ -11,12 +11,12 @@ export default function Hero() {
             {/* Üst Başlık */}
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">{"</>"}</span>
-              <span className="text-white text-sm"> While You Play // We Automate</span>
+              <span className="text-white text-sm"> Sen oynarken // Biz otomatik hale getirelim</span>
             </div>
 
             {/* Ana Başlık */}
             <h1 className="text-6xl font-bold text-white mb-6 leading-tight">
-            Flow Orchestr: Dijital pazarlama orkestranız
+            Flow Orchestr: Dijital pazarlama orkestraniz
             </h1>
 
             {/* Alt Başlık */}
@@ -40,7 +40,7 @@ export default function Hero() {
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                Agent'ları Keşfet
+                AI Agent Çözümlerini Keşfet
               </button>
               <button className="flex items-center justify-center gap-2 px-6 py-3 bg-transparent border border-white text-white rounded-lg hover:bg-white/10 transition-colors font-semibold">
                 <svg
@@ -56,7 +56,7 @@ export default function Hero() {
                     d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
                   />
                 </svg>
-                Canlı Demo İzle
+                Canlı Demo İsteyin
               </button>
             </div>
           </div>
