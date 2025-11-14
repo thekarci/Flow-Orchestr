@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0A0A0A;
+  --card: #1A1A1A;
+  --primary: #3B82F6;
+  --accent: #06B6D4;
+}
+
+body {
+  @apply bg-black text-white;
+}
+
+/* Özel AI geometrik desen animasyonları */
+@keyframes draw-line {
+  0% {
+    stroke-dasharray: 0, 1000;
+  }
+  100% {
+    stroke-dasharray: 1000, 0;
+  }
+}
+
+.animate-draw-line {
+  animation: draw-line 3s ease-in-out infinite;
+}
+
