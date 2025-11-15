@@ -305,18 +305,37 @@ export default function SnakeGame() {
 
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       const touch = e.touches[0];
-      touchStartRef.current = {
-        x: touch.clientX,
-        y: touch.clientY,
-      };
+      if (touch) {
+        touchStartRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+        };
+      }
+      
+      // Oyunu başlat (ilk dokunmatık)
+      if (!gameStarted && !gameStateRef.current.gameOver) {
+        setGameStarted(true);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!touchStartRef.current) return;
 
       const touch = e.changedTouches[0];
+      if (!touch) {
+        touchStartRef.current = null;
+        return;
+      }
+
       const deltaX = touch.clientX - touchStartRef.current.x;
       const deltaY = touch.clientY - touchStartRef.current.y;
 
@@ -367,14 +386,18 @@ export default function SnakeGame() {
       }
     };
 
-    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
-    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
-    canvas.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+    const touchOptions = { passive: false, capture: true };
+
+    canvas.addEventListener("touchstart", handleTouchStart, touchOptions);
+    canvas.addEventListener("touchend", handleTouchEnd, touchOptions);
+    canvas.addEventListener("touchmove", handleTouchMove, touchOptions);
+    canvas.addEventListener("touchcancel", handleTouchEnd, touchOptions);
 
     return () => {
-      canvas.removeEventListener("touchstart", handleTouchStart);
-      canvas.removeEventListener("touchend", handleTouchEnd);
-      canvas.removeEventListener("touchmove", (e) => e.preventDefault());
+      canvas.removeEventListener("touchstart", handleTouchStart, touchOptions);
+      canvas.removeEventListener("touchend", handleTouchEnd, touchOptions);
+      canvas.removeEventListener("touchmove", handleTouchMove, touchOptions);
+      canvas.removeEventListener("touchcancel", handleTouchEnd, touchOptions);
     };
   }, [gameStarted, generateFood, changeDirection]);
 

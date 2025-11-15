@@ -5,7 +5,7 @@ import Image from "next/image";
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-card border-b border-gray-800">
-      <nav className="container mx-auto px-4 py-4">
+      <nav className="container mx-auto px-4 py-6 md:py-4">
         <div className="flex items-center justify-between">
           {/* Sol: Menü Items */}
           <div className="hidden md:flex items-center space-x-8">
@@ -101,7 +101,13 @@ export default function Header() {
 
           {/* Ortada: Logo */}
           <div className="absolute left-1/2 transform -translate-x-1/2">
-            <Image src="/logo.png" alt="Logo" width={120} height={120} />
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={120} 
+              height={120}
+              className="w-20 h-20 md:w-[120px] md:h-[120px]"
+            />
           </div>
         </div>
       </nav>
