@@ -16,7 +16,8 @@ export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const touchStartRef = useRef<TouchStart | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [isAutoMode, setIsAutoMode] = useState(false); // Yeni: Otomatik mod state'i
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Grid ayarları - mobil uyumlu
   const GRID_SIZE = 20;
@@ -130,6 +131,28 @@ export default function SnakeGame() {
     );
   }, [CELL_SIZE, COLS, ROWS]);
 
+  // Mobil cihaz tespiti
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (typeof window !== 'undefined' && window.innerWidth < 768);
+      setIsMobile(isMobileDevice);
+      
+      // Mobilde otomatik modu aktif et
+      if (isMobileDevice) {
+        setIsAutoMode(true);
+        // Mobilde otomatik başlat
+        setTimeout(() => {
+          setGameStarted(true);
+        }, 1000);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Oyun güncelleme - AI kontrolü eklendi
   const update = useCallback(() => {
     const state = gameStateRef.current;
@@ -220,43 +243,15 @@ export default function SnakeGame() {
       state.snake.pop();
     }
 
-    // Otomatik yön değiştirme (rastgele ama mantıklı) - sadece otomatik mod değilse
-    if (!isAutoMode && Math.random() < 0.1) {
-      const directions = [
-        { x: 0, y: -1 }, // Yukarı
-        { x: 1, y: 0 },  // Sağ
-        { x: 0, y: 1 },  // Aşağı
-        { x: -1, y: 0 }, // Sol
-      ];
-      
-      // Ters yöne gitme
-      const currentDir = state.direction;
-      const validDirs = directions.filter(
-        dir => dir.x !== -currentDir.x || dir.y !== -currentDir.y
-      );
-      
-      // Yemeğe doğru gitme eğilimi
-      const foodDir = {
-        x: state.food.x - head.x > 0 ? 1 : state.food.x - head.x < 0 ? -1 : 0,
-        y: state.food.y - head.y > 0 ? 1 : state.food.y - head.y < 0 ? -1 : 0,
-      };
-      
-      const preferredDir = validDirs.find(
-        dir => dir.x === foodDir.x || dir.y === foodDir.y
-      );
-      
-      if (preferredDir && Math.random() < 0.7) {
-        state.direction = preferredDir;
-      } else {
-        state.direction = validDirs[Math.floor(Math.random() * validDirs.length)];
-      }
-    }
+    // Otomatik yön değiştirme kaldırıldı - sadece manuel kontrol
 
     draw();
   }, [COLS, ROWS, draw, generateFood, isAutoMode]);
 
-  // Klavye kontrolleri (Desktop)
+  // Klavye kontrolleri (Desktop) - sadece desktop'ta çalışır
   useEffect(() => {
+    if (isMobile) return; // Mobilde klavye kontrollerini devre dışı bırak
+    
     const handleKeyPress = (e: KeyboardEvent) => {
       const state = gameStateRef.current;
 
@@ -296,10 +291,12 @@ export default function SnakeGame() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [generateFood, changeDirection]);
+  }, [generateFood, changeDirection, isMobile]);
 
-  // Dokunmatik kontroller (Mobil)
+  // Dokunmatik kontroller (Mobil) - sadece mobilde çalışır
   useEffect(() => {
+    if (!isMobile) return; // Desktop'ta dokunma kontrollerini devre dışı bırak
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -312,11 +309,6 @@ export default function SnakeGame() {
           x: touch.clientX,
           y: touch.clientY,
         };
-      }
-      
-      // Oyunu başlat (ilk dokunmatık)
-      if (!gameStarted && !gameStateRef.current.gameOver) {
-        setGameStarted(true);
       }
     };
 
@@ -349,9 +341,11 @@ export default function SnakeGame() {
           if (deltaX > 0) {
             // Sağ
             changeDirection({ x: 1, y: 0 });
+            setIsAutoMode(false); // Kullanıcı dokunduğunda otomatik modu kapat
           } else {
             // Sol
             changeDirection({ x: -1, y: 0 });
+            setIsAutoMode(false);
           }
         }
       } else {
@@ -360,19 +354,16 @@ export default function SnakeGame() {
           if (deltaY > 0) {
             // Aşağı
             changeDirection({ x: 0, y: 1 });
+            setIsAutoMode(false);
           } else {
             // Yukarı
             changeDirection({ x: 0, y: -1 });
+            setIsAutoMode(false);
           }
         }
       }
 
       touchStartRef.current = null;
-
-      // Oyunu başlat (ilk dokunmatık hareket)
-      if (!gameStarted && !gameStateRef.current.gameOver) {
-        setGameStarted(true);
-      }
 
       // Game Over durumunda tekrar başlat
       if (gameStateRef.current.gameOver) {
@@ -383,6 +374,7 @@ export default function SnakeGame() {
         state.score = 0;
         state.gameOver = false;
         setGameStarted(true);
+        setIsAutoMode(true); // Mobilde otomatik modu tekrar aç
       }
     };
 
@@ -399,7 +391,7 @@ export default function SnakeGame() {
       canvas.removeEventListener("touchmove", handleTouchMove, touchOptions);
       canvas.removeEventListener("touchcancel", handleTouchEnd, touchOptions);
     };
-  }, [gameStarted, generateFood, changeDirection]);
+  }, [gameStarted, generateFood, changeDirection, isMobile]);
 
   // Oyun döngüsü - otomatik mod için daha hızlı güncelleme
   useEffect(() => {
@@ -417,41 +409,13 @@ export default function SnakeGame() {
     return () => clearInterval(interval);
   }, [gameStarted, draw, update, isAutoMode]);
 
-  // Otomatik başlat ve AI modu
+  // Kullanıcı manuel başlatırsa otomatik modu kapat (sadece desktop)
   useEffect(() => {
-    let userInteracted = false;
-    
-    const checkUserInteraction = () => {
-      userInteracted = true;
-      window.removeEventListener('keydown', checkUserInteraction);
-      window.removeEventListener('touchstart', checkUserInteraction);
-    };
-    
-    window.addEventListener('keydown', checkUserInteraction);
-    window.addEventListener('touchstart', checkUserInteraction);
-    
-    const timer = setTimeout(() => {
-      if (!userInteracted && !gameStarted) {
-        // 30 saniye sonra kullanıcı başlatmadıysa otomatik mod ile başlat
-        setIsAutoMode(true);
-        setGameStarted(true);
-      }
-    }, 30000); // 30 saniye
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', checkUserInteraction);
-      window.removeEventListener('touchstart', checkUserInteraction);
-    };
-  }, [gameStarted]);
-
-  // Kullanıcı manuel başlatırsa otomatik modu kapat
-  useEffect(() => {
-    if (gameStarted && !isAutoMode) {
-      // Kullanıcı manuel başlattı
+    if (!isMobile && gameStarted && isAutoMode) {
+      // Desktop'ta kullanıcı başlattıysa otomatik modu kapat
       setIsAutoMode(false);
     }
-  }, [gameStarted, isAutoMode]);
+  }, [gameStarted, isAutoMode, isMobile]);
 
   return (
     <div className="relative w-full h-full touch-none">
@@ -467,8 +431,8 @@ export default function SnakeGame() {
           <div className="text-white text-sm font-mono text-center px-4">
             <p className="hidden md:block">Press SPACE to start</p>
             <p className="hidden md:block text-xs mt-2 opacity-70">Use arrow keys to play</p>
-            <p className="block md:hidden">Touch to start</p>
-            <p className="block md:hidden text-xs mt-2 opacity-70">Swipe to control</p>
+            <p className="block md:hidden">Auto-playing...</p>
+            <p className="block md:hidden text-xs mt-2 opacity-70">Swipe to take control</p>
             {isAutoMode && (
               <p className="text-xs mt-4 opacity-50 text-cyan-400">AI Mode: Auto-playing...</p>
             )}
